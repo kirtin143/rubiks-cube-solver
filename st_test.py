@@ -7,7 +7,7 @@ from matplotlib.colors import to_rgba
 
 # --- Cube visualization ---
 def plot_cube(state, ax=None):
-    face_order = ['U', 'R', 'F', 'D', 'L', 'B']
+    face_order = ['U', 'L', 'F', 'R', 'B', 'D']
     color_map = {'W':'white','Y':'yellow','G':'green','B':'blue','O':'orange','R':'red','?':'grey'}
     face_pos = {'U':(0,3),'L':(3,0),'F':(3,3),'R':(3,6),'B':(3,9),'D':(6,3)}
     grid = [['grey']*12 for _ in range(9)]
@@ -18,13 +18,25 @@ def plot_cube(state, ax=None):
             for j in range(3):
                 grid[r0+i][c0+j] = color_map.get(state[si],'grey')
                 si += 1
-    if ax is None:
-        fig,ax = plt.subplots(figsize=(6,6))
+    #if ax is None:
     img_data = [[to_rgba(c) for c in row] for row in grid]
-    ax.imshow(img_data)
-    ax.set_xticks([]); ax.set_yticks([]); ax.axis('off')
-    ax.set_title("Current cube state")
-    return ax
+    top_face = [x[3:6] for x in img_data[:3]]
+    bottom_face = [x[3:6] for x in img_data[6:9]]
+    left_face = [x[:3] for x in img_data[3:6]]
+    right_face = [x[6:9] for x in img_data[3:6]]
+    front_face = [x[3:6] for x in img_data[3:6]]
+    back_face = [x[9:12] for x in img_data[3:6]]
+    ax[0, 0].imshow(top_face)
+    ax[0, 1].imshow(bottom_face)
+    ax[0, 2].imshow(left_face)
+    ax[1, 0].imshow(right_face)
+    ax[1, 1].imshow(front_face)
+    ax[1, 2].imshow(back_face)
+    labels = ["Top (Yellow)", "Bottom (White)", "Left (Red)", "Right (Orange)", "Front (Green)", "Back (Blue)"]
+    for idx, sub_ax in enumerate(ax.flat):
+        sub_ax.set_xticks([]); sub_ax.set_yticks([])
+        sub_ax.set_title(labels[idx])
+    return axes
 
 # --- Color detection ---
 COLOR_RANGES = {
@@ -168,7 +180,6 @@ if 'step_idx' not in st.session_state: st.session_state['step_idx'] = 0
 if uploaded_files and len(uploaded_files)==6:
     try:
         state_str = build_cube_state_from_images(uploaded_files)
-        st.success(f"Cube state string: {state_str}")
 
         if '?' in state_str:
             st.error("Some colors could not be detected. Please upload clearer images.")
@@ -227,6 +238,7 @@ if st.session_state['step_states']:
     else:
         st.write("Initial cube state")
 
-    fig,ax = plt.subplots()
-    plot_cube(states[idx], ax=ax)
+    fig,axes = plt.subplots(2, 3)
+    fig.suptitle("Current cube state")
+    plot_cube(states[idx], ax=axes)
     st.pyplot(fig)
